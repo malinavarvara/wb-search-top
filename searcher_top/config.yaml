@@ -1,0 +1,15 @@
+env: "local"
+
+http:
+  port: "8080"
+  timeout: "4s"
+
+kafka:
+  brokers: ["localhost:9092"]
+  topic: "search-logs"
+  consumer_group: "searcher-top-group"
+
+app:
+  window_duration: "5m"
+  max_top_limit: 100
+  max_requests_per_user: 10
