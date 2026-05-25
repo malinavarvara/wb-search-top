@@ -48,7 +48,7 @@ func NewConsumer(cfg Config, service core.SearchService, log *slog.Logger) *Cons
 		MinBytes:       cfg.MinBytes,
 		MaxBytes:       cfg.MaxBytes,
 		MaxWait:        cfg.MaxWait,
-		CommitInterval: 0, //ручной коммит
+		CommitInterval: 0, // ручной коммит
 		StartOffset:    kafka.LastOffset,
 		ErrorLogger: kafka.LoggerFunc(func(msg string, args ...interface{}) {
 			log.Error("kafka reader error", slog.String("msg", fmt.Sprintf(msg, args...)))

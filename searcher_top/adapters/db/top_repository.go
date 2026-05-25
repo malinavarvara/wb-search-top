@@ -11,7 +11,7 @@ import (
 
 type bucket struct {
 	users map[string]map[string]struct{} // query → set users
-	start time.Time                      //возможно удалить, если не понадобится для отладки
+	start time.Time                      // возможно удалить, если не понадобится для отладки
 }
 
 func newBucket(t time.Time) *bucket {
