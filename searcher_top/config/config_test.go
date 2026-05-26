@@ -96,16 +96,24 @@ func TestMustLoad_FromEnv(t *testing.T) {
 	defer func() {
 		for k, v := range oldEnv {
 			if v == "" {
-				os.Unsetenv(k)
+				if err := os.Unsetenv(k); err != nil {
+					t.Fatalf("failed to unsetenv %q: %v", k, err)
+				}
 			} else {
-				os.Setenv(k, v)
+				if err := os.Setenv(k, v); err != nil {
+					t.Fatalf("failed to setenv %q: %v", k, err)
+				}
 			}
 		}
 	}()
 
-	os.Setenv("KAFKA_BROKERS", "env-kafka:9093,backup:9093")
-	cfg := config.MustLoad("") // только env
+	if err := os.Setenv("KAFKA_BROKERS", "env-kafka:9093,backup:9093"); err != nil {
+		t.Fatalf("failed to set KAFKA_BROKERS: %v", err)
+	}
 
+	cfg := config.MustLoad("") // пустой путь -> только env
+
+	// проверяем
 	if len(cfg.Kafka.Brokers) != 2 {
 		t.Fatalf("Kafka.Brokers len = %d, want 2", len(cfg.Kafka.Brokers))
 	}
@@ -122,7 +130,6 @@ func TestMustLoad_FromEnv(t *testing.T) {
 	if cfg.HTTP.Port != "8080" {
 		t.Errorf("HTTP.Port = %q, want default 8080", cfg.HTTP.Port)
 	}
-
 	if cfg.Kafka.Topic != "search-logs" {
 		t.Errorf("Kafka.Topic = %q, want default 'search-logs'", cfg.Kafka.Topic)
 	}
