@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"sync/atomic"
 	"time"
 )
 
@@ -11,6 +12,8 @@ func Timeout(d time.Duration) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx, cancel := context.WithTimeout(r.Context(), d)
 			defer cancel()
+
+			var written atomic.Bool
 
 			done := make(chan struct{})
 			panicChan := make(chan any, 1)
@@ -27,13 +30,14 @@ func Timeout(d time.Duration) func(http.Handler) http.Handler {
 
 			select {
 			case <-done:
-
 			case p := <-panicChan:
 				panic(p)
 			case <-ctx.Done():
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusServiceUnavailable)
-				_, _ = w.Write([]byte(`{"error":"request timeout"}`))
+				if written.CompareAndSwap(false, true) {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusServiceUnavailable)
+					_, _ = w.Write([]byte(`{"error":"request timeout"}`))
+				}
 			}
 		})
 	}

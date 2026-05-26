@@ -41,9 +41,6 @@ type Consumer struct {
 }
 
 func NewConsumer(cfg Config, service core.SearchService, log *slog.Logger) *Consumer {
-	if err := waitForKafka(cfg.Brokers, 30*time.Second); err != nil {
-		log.Error("kafka not ready", slog.Any("err", err))
-	}
 	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:        cfg.Brokers,
 		Topic:          cfg.Topic,
@@ -63,29 +60,6 @@ func NewConsumer(cfg Config, service core.SearchService, log *slog.Logger) *Cons
 		service: service,
 		log:     log,
 	}
-}
-
-func waitForKafka(brokers []string, timeout time.Duration) error {
-	if len(brokers) == 0 {
-		return errors.New("empty brokers list")
-	}
-
-	deadline := time.Now().Add(timeout)
-	for time.Now().Before(deadline) {
-		for _, broker := range brokers {
-			conn, err := kafka.Dial("tcp", broker)
-			if err == nil {
-				_, err = conn.ReadPartitions()
-				conn.Close()
-
-				if err == nil {
-					return nil
-				}
-			}
-		}
-		time.Sleep(1 * time.Second)
-	}
-	return fmt.Errorf("kafka not ready after %v", timeout)
 }
 
 func (c *Consumer) Run(ctx context.Context) error {
@@ -115,7 +89,7 @@ func (c *Consumer) Run(ctx context.Context) error {
 			c.log.Error("failed to fetch message", slog.Any("err", err))
 			continue
 		}
-		c.log.Info("fetch message", slog.Any("err", err), slog.Int64("offset", msg.Offset))
+		c.log.Info("fetch message", slog.Int64("offset", msg.Offset))
 
 		c.processMessage(ctx, msg)
 	}
