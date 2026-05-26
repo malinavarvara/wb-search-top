@@ -3,13 +3,18 @@ env: "local"
 http:
   port: "8080"
   timeout: "4s"
+  handler_timeout: "2s"
 
 kafka:
-  brokers: ["localhost:9092"]
+  brokers: ["kafka:9092"]
   topic: "search-logs"
   consumer_group: "searcher-top-group"
 
 app:
   window_duration: "5m"
+  bucket_size: "10s"
   max_top_limit: 100
-  max_requests_per_user: 10
+
+rate_limit:
+  rps: 100
+  burst: 20

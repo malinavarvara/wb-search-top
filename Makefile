@@ -11,12 +11,6 @@ build:
 run:
 	go run $(MAIN_PATH)
 
-fmt:
-	go fmt ./...
-
-vet:
-	go vet ./...
-
 test:
 	go test -v -race ./...
 
@@ -56,3 +50,8 @@ kafka-produce:
 		docker compose exec -T kafka kafka-console-producer \
 		--bootstrap-server localhost:9092 \
 		--topic search-logs
+
+test-coverage:
+	go test -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report generated: coverage.html"

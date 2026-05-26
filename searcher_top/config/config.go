@@ -9,15 +9,17 @@ import (
 )
 
 type Config struct {
-	Env   string      `yaml:"env" env-default:"local"`
-	HTTP  HTTPConfig  `yaml:"http"`
-	Kafka KafkaConfig `yaml:"kafka"`
-	App   AppConfig   `yaml:"app"`
+	Env       string          `yaml:"env" env-default:"local"`
+	HTTP      HTTPConfig      `yaml:"http"`
+	Kafka     KafkaConfig     `yaml:"kafka"`
+	App       AppConfig       `yaml:"app"`
+	RateLimit RateLimitConfig `yaml:"rate_limit"`
 }
 
 type HTTPConfig struct {
-	Port    string        `yaml:"port" env-default:"8080"`
-	Timeout time.Duration `yaml:"timeout" env-default:"4s"`
+	Port           string        `yaml:"port" env-default:"8080"`
+	Timeout        time.Duration `yaml:"timeout" env-default:"4s"`
+	HandlerTimeout time.Duration `yaml:"handler_timeout" env-default:"2s"`
 }
 
 type KafkaConfig struct {
@@ -27,9 +29,14 @@ type KafkaConfig struct {
 }
 
 type AppConfig struct {
-	WindowDuration     time.Duration `yaml:"window_duration" env-default:"5m"`
-	MaxTopLimit        int           `yaml:"max_top_limit" env-default:"100"`
-	MaxRequestsPerUser int           `yaml:"max_requests_per_user" env-default:"10"`
+	WindowDuration time.Duration `yaml:"window_duration" env-default:"5m"`
+	BucketSize     time.Duration `yaml:"bucket_size" env-default:"10s"`
+	MaxTopLimit    int           `yaml:"max_top_limit" env-default:"100"`
+}
+
+type RateLimitConfig struct {
+	RPS   int `yaml:"rps" env-default:"100"`
+	Burst int `yaml:"burst" env-default:"20"`
 }
 
 func MustLoad(configPath string) *Config {
