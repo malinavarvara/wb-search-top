@@ -1,0 +1,1192 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>api: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/malinavarvara/wb-search-top/searcher_top/adapters/api/handler.go (68.5%)</option>
+				
+				<option value="file1">github.com/malinavarvara/wb-search-top/searcher_top/adapters/api/middleware/logger.go (100.0%)</option>
+				
+				<option value="file2">github.com/malinavarvara/wb-search-top/searcher_top/adapters/api/middleware/metrics.go (88.9%)</option>
+				
+				<option value="file3">github.com/malinavarvara/wb-search-top/searcher_top/adapters/api/middleware/ratelimiter.go (87.2%)</option>
+				
+				<option value="file4">github.com/malinavarvara/wb-search-top/searcher_top/adapters/api/middleware/recovery.go (100.0%)</option>
+				
+				<option value="file5">github.com/malinavarvara/wb-search-top/searcher_top/adapters/api/middleware/request_id.go (100.0%)</option>
+				
+				<option value="file6">github.com/malinavarvara/wb-search-top/searcher_top/adapters/api/middleware/timeout.go (100.0%)</option>
+				
+				<option value="file7">github.com/malinavarvara/wb-search-top/searcher_top/adapters/api/router.go (0.0%)</option>
+				
+				<option value="file8">github.com/malinavarvara/wb-search-top/searcher_top/adapters/broker/consumer.go (0.0%)</option>
+				
+				<option value="file9">github.com/malinavarvara/wb-search-top/searcher_top/adapters/db/stoplist_repository.go (100.0%)</option>
+				
+				<option value="file10">github.com/malinavarvara/wb-search-top/searcher_top/adapters/db/top_repository.go (100.0%)</option>
+				
+				<option value="file11">github.com/malinavarvara/wb-search-top/searcher_top/config/config.go (66.7%)</option>
+				
+				<option value="file12">github.com/malinavarvara/wb-search-top/searcher_top/core/service.go (84.2%)</option>
+				
+				<option value="file13">github.com/malinavarvara/wb-search-top/searcher_top/main.go (0.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package api
+
+import (
+        "encoding/json"
+        "errors"
+        "log/slog"
+        "net/http"
+        "strconv"
+        "strings"
+
+        "github.com/malinavarvara/wb-search-top/searcher_top/core"
+)
+
+type Handler struct {
+        service core.SearchService
+        log     *slog.Logger
+}
+
+func NewHandler(service core.SearchService, log *slog.Logger) *Handler <span class="cov8" title="1">{
+        return &amp;Handler{service: service, log: log}
+}</span>
+
+func (h *Handler) GetTop(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        n := 0 // дефолт из конфига
+        if raw := r.URL.Query().Get("n"); raw != "" </span><span class="cov8" title="1">{
+                parsed, err := strconv.Atoi(raw)
+                if err != nil || parsed &lt;= 0 </span><span class="cov8" title="1">{
+                        writeError(w, http.StatusBadRequest, "n must be a positive integer")
+                        return
+                }</span>
+                <span class="cov8" title="1">n = parsed</span>
+        }
+
+        <span class="cov8" title="1">items, err := h.service.GetTop(r.Context(), n)
+        if err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, core.ErrInvalidLimit) </span><span class="cov8" title="1">{
+                        writeError(w, http.StatusBadRequest, err.Error())
+                        return
+                }</span>
+                <span class="cov0" title="0">h.log.Error("GetTop failed", slog.Any("err", err))
+                writeError(w, http.StatusInternalServerError, "internal error")
+                return</span>
+        }
+
+        <span class="cov8" title="1">writeJSON(w, http.StatusOK, map[string]any{
+                "items": items,
+                "total": len(items),
+        })</span>
+}
+
+func (h *Handler) AddStopWord(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        var req struct {
+                Word string `json:"word"`
+        }
+        if err := json.NewDecoder(r.Body).Decode(&amp;req); err != nil </span><span class="cov8" title="1">{
+                writeError(w, http.StatusBadRequest, "invalid JSON body")
+                return
+        }</span>
+
+        <span class="cov8" title="1">if err := h.service.AddStopWord(r.Context(), req.Word); err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, core.ErrEmptyWord) </span><span class="cov8" title="1">{
+                        writeError(w, http.StatusBadRequest, err.Error())
+                        return
+                }</span>
+                <span class="cov0" title="0">h.log.Error("AddStopWord failed", slog.Any("err", err))
+                writeError(w, http.StatusInternalServerError, "internal error")
+                return</span>
+        }
+
+        <span class="cov8" title="1">writeJSON(w, http.StatusOK, map[string]string{"word": strings.TrimSpace(req.Word)})</span>
+}
+
+func (h *Handler) RemoveStopWord(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        word := r.PathValue("word")
+        if word == "" </span><span class="cov0" title="0">{
+                word = strings.TrimPrefix(r.URL.Path, "/stoplist/")
+        }</span>
+
+        <span class="cov8" title="1">if err := h.service.RemoveStopWord(r.Context(), word); err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, core.ErrEmptyWord) </span><span class="cov0" title="0">{
+                        writeError(w, http.StatusBadRequest, err.Error())
+                        return
+                }</span>
+                <span class="cov0" title="0">h.log.Error("RemoveStopWord failed", slog.Any("err", err))
+                writeError(w, http.StatusInternalServerError, "internal error")
+                return</span>
+        }
+
+        <span class="cov8" title="1">writeJSON(w, http.StatusOK, map[string]string{"word": word})</span>
+}
+
+func (h *Handler) GetStopWords(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        words, err := h.service.GetStopWords(r.Context())
+        if err != nil </span><span class="cov0" title="0">{
+                h.log.Error("GetStopWords failed", slog.Any("err", err))
+                writeError(w, http.StatusInternalServerError, "internal error")
+                return
+        }</span>
+
+        <span class="cov8" title="1">if words == nil </span><span class="cov8" title="1">{
+                words = []string{}
+        }</span>
+
+        <span class="cov8" title="1">writeJSON(w, http.StatusOK, map[string]any{
+                "words": words,
+                "total": len(words),
+        })</span>
+}
+
+func (h *Handler) Health(w http.ResponseWriter, _ *http.Request) <span class="cov8" title="1">{
+        writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}</span>
+
+func writeJSON(w http.ResponseWriter, status int, v any) <span class="cov8" title="1">{
+        w.Header().Set("Content-Type", "application/json")
+        w.WriteHeader(status)
+        if err := json.NewEncoder(w).Encode(v); err != nil </span><span class="cov0" title="0">{
+                slog.Default().Error("writeJSON encode failed", slog.Any("err", err))
+        }</span>
+}
+
+func writeError(w http.ResponseWriter, status int, msg string) <span class="cov8" title="1">{
+        writeJSON(w, status, map[string]string{"error": msg})
+}</span>
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package middleware
+
+import (
+        "log/slog"
+        "net/http"
+        "time"
+)
+
+type responseWriter struct {
+        http.ResponseWriter
+        statusCode int
+}
+
+func (rw *responseWriter) WriteHeader(code int) <span class="cov8" title="1">{
+        rw.statusCode = code
+        rw.ResponseWriter.WriteHeader(code)
+}</span>
+
+func Logger(log *slog.Logger) func(http.Handler) http.Handler <span class="cov8" title="1">{
+        return func(next http.Handler) http.Handler </span><span class="cov8" title="1">{
+                return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov8" title="1">{
+                        start := time.Now()
+                        rw := &amp;responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
+                        next.ServeHTTP(rw, r)
+                        requestID, _ := r.Context().Value(requestIDKey).(string)
+                        log.Info("http request",
+                                slog.String("method", r.Method),
+                                slog.String("path", r.URL.Path),
+                                slog.Int("status", rw.statusCode),
+                                slog.Duration("duration", time.Since(start)),
+                                slog.String("request_id", requestID),
+                                slog.String("remote_addr", r.RemoteAddr),
+                        )
+                }</span>)
+        }
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package middleware
+
+import (
+        "net/http"
+        "strconv"
+        "time"
+
+        "github.com/prometheus/client_golang/prometheus"
+        "github.com/prometheus/client_golang/prometheus/promauto"
+)
+
+var (
+        httpRequestsTotal = promauto.NewCounterVec(
+                prometheus.CounterOpts{
+                        Name: "http_requests_total",
+                        Help: "Общее количество HTTP-запросов по методу, пути и статусу.",
+                },
+                []string{"method", "path", "status"},
+        )
+
+        httpRequestDuration = promauto.NewHistogramVec(
+                prometheus.HistogramOpts{
+                        Name:    "http_request_duration_seconds",
+                        Help:    "Время обработки HTTP-запроса.",
+                        Buckets: []float64{0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0},
+                },
+                []string{"method", "path"},
+        )
+
+        kafkaEventsTotal = promauto.NewCounterVec(
+                prometheus.CounterOpts{
+                        Name: "kafka_events_processed_total",
+                        Help: "Количество обработанных событий из Kafka по статусу.",
+                },
+                []string{"status"},
+        )
+)
+
+func Metrics(next http.Handler) http.Handler <span class="cov8" title="1">{
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov8" title="1">{
+                start := time.Now()
+                rw := &amp;responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
+
+                next.ServeHTTP(rw, r)
+
+                duration := time.Since(start).Seconds()
+                status := strconv.Itoa(rw.statusCode)
+
+                httpRequestsTotal.WithLabelValues(r.Method, r.URL.Path, status).Inc()
+                httpRequestDuration.WithLabelValues(r.Method, r.URL.Path).Observe(duration)
+        }</span>)
+}
+
+func KafkaEventInc(status string) <span class="cov0" title="0">{
+        kafkaEventsTotal.WithLabelValues(status).Inc()
+}</span>
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package middleware
+
+import (
+        "net"
+        "net/http"
+        "strings"
+        "sync"
+        "time"
+
+        "golang.org/x/time/rate"
+)
+
+type ipLimiter struct {
+        limiter  *rate.Limiter
+        lastSeen time.Time
+}
+
+func RateLimiter(rps float64, burst int) func(http.Handler) http.Handler <span class="cov8" title="1">{
+        type store struct {
+                mu       sync.Mutex
+                limiters map[string]*ipLimiter
+        }
+
+        s := &amp;store{
+                limiters: make(map[string]*ipLimiter),
+        }
+
+        go func() </span><span class="cov8" title="1">{
+                ticker := time.NewTicker(5 * time.Minute)
+                defer ticker.Stop()
+                for range ticker.C </span><span class="cov0" title="0">{
+                        s.mu.Lock()
+                        for ip, l := range s.limiters </span><span class="cov0" title="0">{
+                                if time.Since(l.lastSeen) &gt; 5*time.Minute </span><span class="cov0" title="0">{
+                                        delete(s.limiters, ip)
+                                }</span>
+                        }
+                        <span class="cov0" title="0">s.mu.Unlock()</span>
+                }
+        }()
+
+        <span class="cov8" title="1">getLimiter := func(ip string) *rate.Limiter </span><span class="cov8" title="1">{
+                s.mu.Lock()
+                defer s.mu.Unlock()
+
+                l, ok := s.limiters[ip]
+                if !ok </span><span class="cov8" title="1">{
+                        l = &amp;ipLimiter{
+                                limiter: rate.NewLimiter(rate.Limit(rps), burst),
+                        }
+                        s.limiters[ip] = l
+                }</span>
+                <span class="cov8" title="1">l.lastSeen = time.Now()
+                return l.limiter</span>
+        }
+
+        <span class="cov8" title="1">return func(next http.Handler) http.Handler </span><span class="cov8" title="1">{
+                return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov8" title="1">{
+                        ip := extractIP(r)
+
+                        if !getLimiter(ip).Allow() </span><span class="cov8" title="1">{
+                                w.Header().Set("Content-Type", "application/json")
+                                w.Header().Set("Retry-After", "1")
+                                w.WriteHeader(http.StatusTooManyRequests)
+                                _, _ = w.Write([]byte(`{"error":"rate limit exceeded"}`))
+                                return
+                        }</span>
+
+                        <span class="cov8" title="1">next.ServeHTTP(w, r)</span>
+                })
+        }
+}
+
+func extractIP(r *http.Request) string <span class="cov8" title="1">{
+        if ip := r.Header.Get("X-Real-IP"); ip != "" </span><span class="cov8" title="1">{
+                return ip
+        }</span>
+        <span class="cov8" title="1">if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" </span><span class="cov8" title="1">{
+                parts := strings.SplitN(forwarded, ",", 2)
+                return strings.TrimSpace(parts[0])
+        }</span>
+        <span class="cov8" title="1">ip, _, err := net.SplitHostPort(r.RemoteAddr)
+        if err != nil </span><span class="cov8" title="1">{
+                return r.RemoteAddr
+        }</span>
+        <span class="cov8" title="1">return ip</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package middleware
+
+import (
+        "log/slog"
+        "net/http"
+)
+
+func Recovery(log *slog.Logger) func(http.Handler) http.Handler <span class="cov8" title="1">{
+        return func(next http.Handler) http.Handler </span><span class="cov8" title="1">{
+                return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov8" title="1">{
+                        defer func() </span><span class="cov8" title="1">{
+                                if err := recover(); err != nil </span><span class="cov8" title="1">{
+                                        requestID, _ := r.Context().Value(requestIDKey).(string)
+                                        log.Error("panic recovered",
+                                                slog.Any("error", err),
+                                                slog.String("path", r.URL.Path),
+                                                slog.String("request_id", requestID),
+                                        )
+                                        http.Error(w, "internal server error", http.StatusInternalServerError)
+                                }</span>
+                        }()
+
+                        <span class="cov8" title="1">next.ServeHTTP(w, r)</span>
+                })
+        }
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package middleware
+
+import (
+        "context"
+        "net/http"
+
+        "github.com/google/uuid"
+)
+
+type contextKey string
+
+const requestIDKey contextKey = "request_id"
+
+func RequestID(next http.Handler) http.Handler <span class="cov8" title="1">{
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov8" title="1">{
+                id := r.Header.Get("X-Request-ID")
+                if id == "" </span><span class="cov8" title="1">{
+                        id = uuid.NewString()
+                }</span>
+
+                <span class="cov8" title="1">w.Header().Set("X-Request-ID", id)
+                ctx := context.WithValue(r.Context(), requestIDKey, id)
+                next.ServeHTTP(w, r.WithContext(ctx))</span>
+        })
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package middleware
+
+import (
+        "context"
+        "net/http"
+        "sync/atomic"
+        "time"
+)
+
+func Timeout(d time.Duration) func(http.Handler) http.Handler <span class="cov8" title="1">{
+        return func(next http.Handler) http.Handler </span><span class="cov8" title="1">{
+                return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov8" title="1">{
+                        ctx, cancel := context.WithTimeout(r.Context(), d)
+                        defer cancel()
+
+                        var written atomic.Bool
+
+                        done := make(chan struct{})
+                        panicChan := make(chan any, 1)
+
+                        go func() </span><span class="cov8" title="1">{
+                                defer func() </span><span class="cov8" title="1">{
+                                        if p := recover(); p != nil </span><span class="cov8" title="1">{
+                                                panicChan &lt;- p
+                                        }</span>
+                                }()
+                                <span class="cov8" title="1">next.ServeHTTP(w, r.WithContext(ctx))
+                                close(done)</span>
+                        }()
+
+                        <span class="cov8" title="1">select </span>{
+                        case &lt;-done:<span class="cov8" title="1"></span>
+                        case p := &lt;-panicChan:<span class="cov8" title="1">
+                                panic(p)</span>
+                        case &lt;-ctx.Done():<span class="cov8" title="1">
+                                if written.CompareAndSwap(false, true) </span><span class="cov8" title="1">{
+                                        w.Header().Set("Content-Type", "application/json")
+                                        w.WriteHeader(http.StatusServiceUnavailable)
+                                        _, _ = w.Write([]byte(`{"error":"request timeout"}`))
+                                }</span>
+                        }
+                })
+        }
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package api
+
+import (
+        "log/slog"
+        "net/http"
+        "time"
+
+        "github.com/prometheus/client_golang/prometheus/promhttp"
+
+        "github.com/malinavarvara/wb-search-top/searcher_top/adapters/api/middleware"
+)
+
+type RouterConfig struct {
+        HandlerTimeout time.Duration
+        RateLimitRPS   float64
+        RateLimitBurst int
+}
+
+func NewRouter(h *Handler, log *slog.Logger, cfg RouterConfig) http.Handler <span class="cov0" title="0">{
+        mux := http.NewServeMux()
+        mux.HandleFunc("GET /top", h.GetTop)
+        mux.HandleFunc("GET /stoplist", h.GetStopWords)
+        mux.HandleFunc("POST /stoplist", h.AddStopWord)
+        mux.HandleFunc("DELETE /stoplist/{word}", h.RemoveStopWord)
+        mux.HandleFunc("GET /health", h.Health)
+        mux.Handle("GET /metrics", promhttp.Handler())
+
+        var handler http.Handler = mux
+        handler = middleware.Timeout(cfg.HandlerTimeout)(handler)
+        handler = middleware.Metrics(handler)
+        handler = middleware.Logger(log)(handler)
+        handler = middleware.RequestID(handler)
+        handler = middleware.RateLimiter(cfg.RateLimitRPS, cfg.RateLimitBurst)(handler)
+        handler = middleware.Recovery(log)(handler)
+
+        return handler
+}</span>
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package broker
+
+import (
+        "context"
+        "encoding/json"
+        "errors"
+        "fmt"
+        "io"
+        "log/slog"
+        "time"
+
+        "github.com/segmentio/kafka-go"
+
+        "github.com/malinavarvara/wb-search-top/searcher_top/core"
+)
+
+type Config struct {
+        Brokers       []string
+        Topic         string
+        ConsumerGroup string
+        MinBytes      int
+        MaxBytes      int
+        MaxWait       time.Duration
+}
+
+func DefaultConfig(brokers []string, topic, group string) Config <span class="cov0" title="0">{
+        return Config{
+                Brokers:       brokers,
+                Topic:         topic,
+                ConsumerGroup: group,
+                MinBytes:      10_000,     // 10 KB
+                MaxBytes:      10_000_000, // 10 MB
+                MaxWait:       500 * time.Millisecond,
+        }
+}</span>
+
+type Consumer struct {
+        reader  *kafka.Reader
+        service core.SearchService
+        log     *slog.Logger
+}
+
+func NewConsumer(cfg Config, service core.SearchService, log *slog.Logger) *Consumer <span class="cov0" title="0">{
+        reader := kafka.NewReader(kafka.ReaderConfig{
+                Brokers:        cfg.Brokers,
+                Topic:          cfg.Topic,
+                GroupID:        cfg.ConsumerGroup,
+                MinBytes:       cfg.MinBytes,
+                MaxBytes:       cfg.MaxBytes,
+                MaxWait:        cfg.MaxWait,
+                CommitInterval: 0, // ручной коммит
+                StartOffset:    kafka.LastOffset,
+                ErrorLogger: kafka.LoggerFunc(func(msg string, args ...interface{}) </span><span class="cov0" title="0">{
+                        log.Error("kafka reader error", slog.String("msg", fmt.Sprintf(msg, args...)))
+                }</span>),
+        })
+
+        <span class="cov0" title="0">return &amp;Consumer{
+                reader:  reader,
+                service: service,
+                log:     log,
+        }</span>
+}
+
+func (c *Consumer) Run(ctx context.Context) error <span class="cov0" title="0">{
+        c.log.Info("kafka consumer started",
+                slog.String("topic", c.reader.Config().Topic),
+                slog.String("group", c.reader.Config().GroupID),
+                slog.Any("brokers", c.reader.Config().Brokers),
+        )
+
+        defer func() </span><span class="cov0" title="0">{
+                if err := c.reader.Close(); err != nil </span><span class="cov0" title="0">{
+                        c.log.Error("failed to close kafka reader", slog.Any("err", err))
+                }</span>
+                <span class="cov0" title="0">c.log.Info("kafka consumer stopped")</span>
+        }()
+
+        <span class="cov0" title="0">for </span><span class="cov0" title="0">{
+                msg, err := c.reader.FetchMessage(ctx)
+                if err != nil </span><span class="cov0" title="0">{
+                        if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) </span><span class="cov0" title="0">{
+                                return nil
+                        }</span>
+                        <span class="cov0" title="0">if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) </span><span class="cov0" title="0">{
+                                c.log.Warn("kafka connection lost, retrying...", slog.Any("err", err))
+                                continue</span>
+                        }
+                        <span class="cov0" title="0">c.log.Error("failed to fetch message", slog.Any("err", err))
+                        continue</span>
+                }
+                <span class="cov0" title="0">c.log.Info("fetch message", slog.Int64("offset", msg.Offset))
+
+                c.processMessage(ctx, msg)</span>
+        }
+}
+
+type kafkaMessage struct {
+        Query     string    `json:"query"`
+        UserID    string    `json:"user_id"`
+        Timestamp time.Time `json:"timestamp"`
+}
+
+func (c *Consumer) processMessage(ctx context.Context, msg kafka.Message) <span class="cov0" title="0">{
+        var km kafkaMessage
+        if err := json.Unmarshal(msg.Value, &amp;km); err != nil </span><span class="cov0" title="0">{
+                c.log.Warn("failed to parse message, skipping",
+                        slog.Any("err", err),
+                        slog.Int64("offset", msg.Offset),
+                        slog.String("value_preview", truncate(string(msg.Value), 100)),
+                )
+                c.commit(ctx, msg)
+                return
+        }</span>
+
+        <span class="cov0" title="0">event := core.SearchEvent{
+                Query:     km.Query,
+                UserID:    km.UserID,
+                Timestamp: km.Timestamp,
+        }
+
+        if err := c.service.ProcessEvent(ctx, event); err != nil </span><span class="cov0" title="0">{
+                if !errors.Is(err, core.ErrEmptyQuery) </span><span class="cov0" title="0">{
+                        c.log.Warn("failed to process event",
+                                slog.Any("err", err),
+                                slog.String("query", event.Query),
+                        )
+                }</span>
+        }
+
+        <span class="cov0" title="0">c.commit(ctx, msg)</span>
+}
+
+func (c *Consumer) commit(ctx context.Context, msg kafka.Message) <span class="cov0" title="0">{
+        if err := c.reader.CommitMessages(ctx, msg); err != nil </span><span class="cov0" title="0">{
+                if !errors.Is(err, context.Canceled) </span><span class="cov0" title="0">{
+                        c.log.Error("failed to commit message",
+                                slog.Any("err", err),
+                                slog.Int64("offset", msg.Offset),
+                        )
+                }</span>
+        }
+}
+
+func truncate(s string, maxLen int) string <span class="cov0" title="0">{
+        runes := []rune(s)
+        if len(runes) &lt;= maxLen </span><span class="cov0" title="0">{
+                return s
+        }</span>
+        <span class="cov0" title="0">return string(runes[:maxLen]) + "..."</span>
+}
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package db
+
+import (
+        "strings"
+        "sync"
+)
+
+type StopListRepository struct {
+        mu    sync.RWMutex
+        words map[string]struct{}
+}
+
+func NewStopListRepository() *StopListRepository <span class="cov8" title="1">{
+        return &amp;StopListRepository{
+                words: make(map[string]struct{}),
+        }
+}</span>
+
+func (s *StopListRepository) Add(word string) <span class="cov8" title="1">{
+        word = normalize(word)
+        if word == "" </span><span class="cov8" title="1">{
+                return
+        }</span>
+        <span class="cov8" title="1">s.mu.Lock()
+        defer s.mu.Unlock()
+        s.words[word] = struct{}{}</span>
+}
+
+func (s *StopListRepository) Remove(word string) <span class="cov8" title="1">{
+        word = normalize(word)
+        s.mu.Lock()
+        defer s.mu.Unlock()
+        delete(s.words, word)
+}</span>
+
+func (s *StopListRepository) Contains(word string) bool <span class="cov8" title="1">{
+        word = normalize(word)
+        s.mu.RLock()
+        defer s.mu.RUnlock()
+        _, ok := s.words[word]
+        return ok
+}</span>
+
+func (s *StopListRepository) GetAll() []string <span class="cov8" title="1">{
+        s.mu.RLock()
+        defer s.mu.RUnlock()
+        result := make([]string, 0, len(s.words))
+        for w := range s.words </span><span class="cov8" title="1">{
+                result = append(result, w)
+        }</span>
+        <span class="cov8" title="1">return result</span>
+}
+
+func normalize(s string) string <span class="cov8" title="1">{
+        return strings.TrimSpace(strings.ToLower(s))
+}</span>
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">package db
+
+import (
+        "sort"
+        "strings"
+        "sync"
+        "time"
+
+        "github.com/malinavarvara/wb-search-top/searcher_top/core"
+)
+
+type bucket struct {
+        users map[string]map[string]struct{} // query → set users
+        start time.Time                      // возможно удалить, если не понадобится для отладки
+}
+
+func newBucket(t time.Time) *bucket <span class="cov8" title="1">{
+        return &amp;bucket{
+                users: make(map[string]map[string]struct{}),
+                start: t,
+        }
+}</span>
+
+func (b *bucket) add(query, userID string) <span class="cov8" title="1">{
+        if _, ok := b.users[query]; !ok </span><span class="cov8" title="1">{
+                b.users[query] = make(map[string]struct{})
+        }</span>
+        <span class="cov8" title="1">b.users[query][userID] = struct{}{}</span>
+}
+
+type TopRepository struct {
+        mu         sync.RWMutex
+        buckets    []*bucket
+        bucketSize time.Duration // длина одного бакета (10s)
+        windowSize time.Duration // общий размор окна (5m)
+        numBuckets int           // 30 = 5m / 10s
+}
+
+func NewTopRepository(windowSize, bucketSize time.Duration) *TopRepository <span class="cov8" title="1">{
+        n := int(windowSize / bucketSize)
+        buckets := make([]*bucket, n)
+        now := time.Now()
+        for i := range buckets </span><span class="cov8" title="1">{
+                buckets[i] = newBucket(now)
+        }</span>
+        <span class="cov8" title="1">r := &amp;TopRepository{
+                buckets:    buckets,
+                bucketSize: bucketSize,
+                windowSize: windowSize,
+                numBuckets: n,
+        }
+        go r.rotateLoop()
+        return r</span>
+}
+
+func (r *TopRepository) Increment(query, userID string, _ time.Time) <span class="cov8" title="1">{
+        r.mu.Lock()
+        defer r.mu.Unlock()
+
+        current := r.buckets[r.numBuckets-1]
+        current.add(query, userID)
+}</span>
+
+func (r *TopRepository) GetTop(n int) []core.TopItem <span class="cov8" title="1">{
+        r.mu.RLock()
+        defer r.mu.RUnlock()
+
+        merged := make(map[string]map[string]struct{})
+        for _, b := range r.buckets </span><span class="cov8" title="1">{
+                for query, users := range b.users </span><span class="cov8" title="1">{
+                        if _, ok := merged[query]; !ok </span><span class="cov8" title="1">{
+                                merged[query] = make(map[string]struct{})
+                        }</span>
+                        <span class="cov8" title="1">for uid := range users </span><span class="cov8" title="1">{
+                                merged[query][uid] = struct{}{}
+                        }</span>
+                }
+        }
+
+        <span class="cov8" title="1">items := make([]core.TopItem, 0, len(merged))
+        for query, users := range merged </span><span class="cov8" title="1">{
+                count := int64(len(users))
+                items = append(items, core.TopItem{
+                        Query: query,
+                        Count: count,
+                })
+        }</span>
+
+        <span class="cov8" title="1">sort.Slice(items, func(i, j int) bool </span><span class="cov8" title="1">{
+                if items[i].Count != items[j].Count </span><span class="cov8" title="1">{
+                        return items[i].Count &gt; items[j].Count
+                }</span>
+                <span class="cov8" title="1">return strings.Compare(items[i].Query, items[j].Query) &lt; 0</span>
+        })
+
+        <span class="cov8" title="1">if n &gt; 0 &amp;&amp; n &lt; len(items) </span><span class="cov8" title="1">{
+                return items[:n]
+        }</span>
+        <span class="cov8" title="1">return items</span>
+}
+
+func (r *TopRepository) rotateLoop() <span class="cov8" title="1">{
+        ticker := time.NewTicker(r.bucketSize)
+        defer ticker.Stop()
+        for t := range ticker.C </span><span class="cov8" title="1">{
+                r.rotate(t)
+        }</span>
+}
+
+func (r *TopRepository) rotate(t time.Time) <span class="cov8" title="1">{
+        r.mu.Lock()
+        defer r.mu.Unlock()
+
+        copy(r.buckets, r.buckets[1:])
+        r.buckets[r.numBuckets-1] = newBucket(t)
+}</span>
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">package config
+
+import (
+        "log/slog"
+        "os"
+        "time"
+
+        "github.com/ilyakaznacheev/cleanenv"
+)
+
+type Config struct {
+        Env       string          `yaml:"env" env-default:"local"`
+        HTTP      HTTPConfig      `yaml:"http"`
+        Kafka     KafkaConfig     `yaml:"kafka"`
+        App       AppConfig       `yaml:"app"`
+        RateLimit RateLimitConfig `yaml:"rate_limit"`
+}
+
+type HTTPConfig struct {
+        Port           string        `yaml:"port" env-default:"8080"`
+        Timeout        time.Duration `yaml:"timeout" env-default:"4s"`
+        HandlerTimeout time.Duration `yaml:"handler_timeout" env-default:"2s"`
+}
+
+type KafkaConfig struct {
+        Brokers       []string `yaml:"brokers" env:"KAFKA_BROKERS"`
+        Topic         string   `yaml:"topic" env-default:"search-logs"`
+        ConsumerGroup string   `yaml:"consumer_group" env-default:"searcher-top-group"`
+}
+
+type AppConfig struct {
+        WindowDuration time.Duration `yaml:"window_duration" env-default:"5m"`
+        BucketSize     time.Duration `yaml:"bucket_size" env-default:"10s"`
+        MaxTopLimit    int           `yaml:"max_top_limit" env-default:"100"`
+}
+
+type RateLimitConfig struct {
+        RPS   int `yaml:"rps" env-default:"100"`
+        Burst int `yaml:"burst" env-default:"20"`
+}
+
+func MustLoad(configPath string) *Config <span class="cov8" title="1">{
+        var cfg Config
+
+        if configPath != "" </span><span class="cov8" title="1">{
+                if err := cleanenv.ReadConfig(configPath, &amp;cfg); err != nil </span><span class="cov0" title="0">{
+                        slog.Error("failed to read config file", "path", configPath, "error", err)
+                        os.Exit(1)
+                }</span>
+                <span class="cov8" title="1">slog.Info("config loaded from file", "path", configPath)</span>
+        } else<span class="cov8" title="1"> {
+                slog.Info("loading config from environment variables")
+                if err := cleanenv.ReadEnv(&amp;cfg); err != nil </span><span class="cov0" title="0">{
+                        slog.Error("failed to read config from env", "error", err)
+                        os.Exit(1)
+                }</span>
+                <span class="cov8" title="1">slog.Info("config loaded from env")</span>
+        }
+        <span class="cov8" title="1">return &amp;cfg</span>
+}
+</pre>
+		
+		<pre class="file" id="file12" style="display: none">package core
+
+import (
+        "context"
+        "log/slog"
+        "strings"
+        "time"
+        "unicode"
+)
+
+type topRepo interface {
+        Increment(query, userID string, ts time.Time)
+        GetTop(n int) []TopItem
+}
+
+type stopRepo interface {
+        Add(word string)
+        Remove(word string)
+        Contains(word string) bool
+        GetAll() []string
+}
+
+type Service struct {
+        top         topRepo
+        stopList    stopRepo
+        log         *slog.Logger
+        maxTopLimit int
+}
+
+func NewService(
+        top topRepo,
+        stopList stopRepo,
+        log *slog.Logger,
+        maxTopLimit int,
+) *Service <span class="cov8" title="1">{
+        return &amp;Service{
+                top:         top,
+                stopList:    stopList,
+                log:         log,
+                maxTopLimit: maxTopLimit,
+        }
+}</span>
+
+func (s *Service) ProcessEvent(_ context.Context, event SearchEvent) error <span class="cov8" title="1">{
+        query := normalizeQuery(event.Query)
+        if query == "" </span><span class="cov8" title="1">{
+                s.log.Debug("skipping empty query", slog.String("raw", event.Query))
+                return ErrEmptyQuery
+        }</span>
+
+        <span class="cov8" title="1">if s.stopList.Contains(query) </span><span class="cov8" title="1">{
+                s.log.Debug("query in stop list, skipping",
+                        slog.String("query", query),
+                )
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">userID := event.UserID
+        if userID == "" </span><span class="cov8" title="1">{
+                userID = "anon-" + event.Timestamp.Format("20060102150405.000")
+        }</span>
+
+        <span class="cov8" title="1">ts := event.Timestamp
+        if ts.IsZero() </span><span class="cov8" title="1">{
+                ts = time.Now()
+        }</span>
+
+        <span class="cov8" title="1">s.top.Increment(query, userID, ts)
+
+        s.log.Debug("event processed",
+                slog.String("query", query),
+                slog.String("user_id", userID),
+        )
+        return nil</span>
+}
+
+func (s *Service) GetTop(_ context.Context, n int) ([]TopItem, error) <span class="cov8" title="1">{
+        if n &lt;= 0 </span><span class="cov8" title="1">{
+                n = s.maxTopLimit
+        }</span>
+        <span class="cov8" title="1">if n &gt; s.maxTopLimit </span><span class="cov8" title="1">{
+                return nil, ErrInvalidLimit
+        }</span>
+        <span class="cov8" title="1">return s.top.GetTop(n), nil</span>
+}
+
+func (s *Service) AddStopWord(_ context.Context, word string) error <span class="cov8" title="1">{
+        if strings.TrimSpace(word) == "" </span><span class="cov8" title="1">{
+                return ErrEmptyWord
+        }</span>
+        <span class="cov0" title="0">s.stopList.Add(word)
+        s.log.Info("stop word added", slog.String("word", word))
+        return nil</span>
+}
+
+func (s *Service) RemoveStopWord(_ context.Context, word string) error <span class="cov8" title="1">{
+        if strings.TrimSpace(word) == "" </span><span class="cov8" title="1">{
+                return ErrEmptyWord
+        }</span>
+        <span class="cov0" title="0">s.stopList.Remove(word)
+        s.log.Info("stop word removed", slog.String("word", word))
+        return nil</span>
+}
+
+func (s *Service) GetStopWords(_ context.Context) ([]string, error) <span class="cov8" title="1">{
+        return s.stopList.GetAll(), nil
+}</span>
+
+func normalizeQuery(s string) string <span class="cov8" title="1">{
+        s = strings.ToLower(s)
+
+        fields := strings.FieldsFunc(s, unicode.IsSpace)
+        if len(fields) == 0 </span><span class="cov8" title="1">{
+                return ""
+        }</span>
+        <span class="cov8" title="1">return strings.Join(fields, " ")</span>
+}
+</pre>
+		
+		<pre class="file" id="file13" style="display: none">package main
+
+import (
+        "context"
+        "errors"
+        "log/slog"
+        "net/http"
+        "os"
+        "os/signal"
+        "syscall"
+        "time"
+
+        "github.com/malinavarvara/wb-search-top/searcher_top/adapters/api"
+        "github.com/malinavarvara/wb-search-top/searcher_top/adapters/broker"
+        "github.com/malinavarvara/wb-search-top/searcher_top/adapters/db"
+        "github.com/malinavarvara/wb-search-top/searcher_top/config"
+        "github.com/malinavarvara/wb-search-top/searcher_top/core"
+)
+
+func main() <span class="cov0" title="0">{
+        cfg := config.MustLoad("searcher_top/config.yaml")
+        log := setupLogger(cfg.Env)
+        log.Info("starting searcher_top",
+                slog.String("env", cfg.Env),
+                slog.String("port", cfg.HTTP.Port),
+        )
+
+        topRepo := db.NewTopRepository(
+                cfg.App.WindowDuration,
+                cfg.App.BucketSize,
+        )
+        stopRepo := db.NewStopListRepository()
+        service := core.NewService(topRepo, stopRepo, log, cfg.App.MaxTopLimit)
+
+        handler := api.NewHandler(service, log)
+        router := api.NewRouter(handler, log, api.RouterConfig{
+                HandlerTimeout: cfg.HTTP.HandlerTimeout,
+                RateLimitRPS:   float64(cfg.RateLimit.RPS),
+                RateLimitBurst: cfg.RateLimit.Burst,
+        })
+
+        srv := &amp;http.Server{
+                Addr:         ":" + cfg.HTTP.Port,
+                Handler:      router,
+                ReadTimeout:  cfg.HTTP.Timeout,
+                WriteTimeout: cfg.HTTP.Timeout,
+                IdleTimeout:  cfg.HTTP.Timeout * 3,
+        }
+
+        consumerCfg := broker.DefaultConfig(
+                cfg.Kafka.Brokers,
+                cfg.Kafka.Topic,
+                cfg.Kafka.ConsumerGroup,
+        )
+        consumer := broker.NewConsumer(consumerCfg, service, log)
+
+        ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+        defer stop()
+
+        go func() </span><span class="cov0" title="0">{
+                if err := consumer.Run(ctx); err != nil </span><span class="cov0" title="0">{
+                        log.Error("kafka consumer stopped with error", slog.Any("err", err))
+                }</span>
+        }()
+
+        <span class="cov0" title="0">go func() </span><span class="cov0" title="0">{
+                log.Info("http server listening", slog.String("addr", srv.Addr))
+                if err := srv.ListenAndServe(); err != nil &amp;&amp; !errors.Is(err, http.ErrServerClosed) </span><span class="cov0" title="0">{
+                        log.Error("http server failed", slog.Any("err", err))
+                        stop() // инициируем shutdown если сервер упал
+                }</span>
+        }()
+
+        <span class="cov0" title="0">&lt;-ctx.Done()
+        log.Info("shutdown signal received, shutting down...")
+
+        shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+        defer cancel()
+
+        if err := srv.Shutdown(shutdownCtx); err != nil </span><span class="cov0" title="0">{
+                log.Error("http server shutdown failed", slog.Any("err", err))
+        }</span>
+
+        <span class="cov0" title="0">log.Info("shutdown complete")</span>
+}
+
+func setupLogger(env string) *slog.Logger <span class="cov0" title="0">{
+        var handler slog.Handler
+
+        switch env </span>{
+        case "local":<span class="cov0" title="0">
+                handler = slog.NewTextHandler(os.Stdout, &amp;slog.HandlerOptions{
+                        Level: slog.LevelDebug,
+                })</span>
+        default:<span class="cov0" title="0">
+                handler = slog.NewJSONHandler(os.Stdout, &amp;slog.HandlerOptions{
+                        Level: slog.LevelInfo,
+                })</span>
+        }
+
+        <span class="cov0" title="0">return slog.New(handler)</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

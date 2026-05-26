@@ -81,7 +81,20 @@ func (s *Service) GetTop(_ context.Context, n int) ([]TopItem, error) {
 	if n > s.maxTopLimit {
 		return nil, ErrInvalidLimit
 	}
-	return s.top.GetTop(n), nil
+
+	raw := s.top.GetTop(n)
+
+	result := make([]TopItem, 0, len(raw))
+	for _, item := range raw {
+		if !s.stopList.Contains(item.Query) {
+			result = append(result, item)
+		}
+	}
+
+	if n < len(result) {
+		return result[:n], nil
+	}
+	return result, nil
 }
 
 func (s *Service) AddStopWord(_ context.Context, word string) error {
